@@ -1,4 +1,4 @@
-# 公式LINEアカウントを学習済みAIで自動返信するチャットボット
+# 公式LINEアカウントのチャットボット
 
 顧客サポート用の公式 LINE と Gemini を使った RAG チャットボット。Firebase Cloud Functions (2nd gen) 上で動作し、社内資料（Markdown）を取り込んで回答します。
 
