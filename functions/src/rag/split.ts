@@ -10,5 +10,3 @@ export async function splitText(text: string): Promise<string[]> {
   return docs.map((d) => d.pageContent);
 }
 
-
-

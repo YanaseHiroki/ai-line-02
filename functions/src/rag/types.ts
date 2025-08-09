@@ -6,5 +6,3 @@ export type DocChunk = {
   page?: number;
 };
 
-
-

@@ -44,5 +44,3 @@ if (require.main === module) {
     });
 }
 
-
-
