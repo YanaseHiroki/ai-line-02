@@ -35,7 +35,7 @@ firebase functions:secrets:set GENAI_API_KEY
 3) .env（非機密）
 `functions/.env`
 ```
-LINE_CHANNEL_ID=2007897093
+LINE_CHANNEL_ID=1234567890
 ```
 
 4) デプロイ
