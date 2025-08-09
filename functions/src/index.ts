@@ -9,13 +9,12 @@
 
 import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/v2/https";
-import * as logger from "firebase-functions/logger";
 
 import { createApp } from "./line/app";
 import { buildAnswerer } from "./rag/answerer";
 import { verifySignature as verifySignatureImpl } from "./line/signature";
 import { replyMessage as replyMessageImpl } from "./line/reply";
-import { LINE_CHANNEL_ID, LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, GENAI_API_KEY } from "./params";
+import { LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, GENAI_API_KEY } from "./params";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -38,20 +37,20 @@ const app = createApp({
   verifySignature: (rawBody, signature) =>
     verifySignatureImpl({
       rawBody,
-      signature,
+      signature: signature ?? "",
       channelSecret: process.env.LINE_CHANNEL_SECRET ?? "",
     }),
-  replyMessage: (replyToken, text) => replyMessageImpl({
-    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
-    replyToken,
-    text,
-  }),
+  replyMessage: (replyToken, text) =>
+    replyMessageImpl({
+      channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
+      replyToken,
+      text,
+    }),
 });
 
 export const lineWebhook = onRequest(
   { secrets: [LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, GENAI_API_KEY] },
   (req, res) => {
-    // Health endpoint
     if (req.method === "GET") {
       res.status(200).send("ok");
       return;

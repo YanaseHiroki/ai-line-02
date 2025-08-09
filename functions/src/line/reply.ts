@@ -1,4 +1,4 @@
-import { Client } from '@line/bot-sdk';
+import { Client } from "@line/bot-sdk";
 
 export async function replyMessage({
   channelAccessToken,
@@ -10,7 +10,7 @@ export async function replyMessage({
   text: string;
 }): Promise<void> {
   const client = new Client({ channelAccessToken });
-  await client.replyMessage(replyToken, { type: 'text', text });
+  await client.replyMessage(replyToken, { type: "text", text });
 }
 
 

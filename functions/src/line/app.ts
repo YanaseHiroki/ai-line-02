@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response } from "express";
 
 type Deps = {
   answerQuestion: (query: string) => Promise<string>;
@@ -18,24 +18,26 @@ export function createApp(deps: Deps) {
     })
   );
 
-  app.get('/line/webhook', (_req, res) => res.status(200).send('ok'));
+  app.get("/line/webhook", (_req, res) => res.status(200).send("ok"));
 
-  app.post('/line/webhook', async (req: Request & { rawBody?: Buffer }, res: Response) => {
-    const signature = req.header('x-line-signature');
-    const ok = deps.verifySignature(req.rawBody ?? Buffer.from(''), signature);
+  app.post("/line/webhook", async (req: Request & { rawBody?: Buffer }, res: Response): Promise<void> => {
+    const signature = req.header("x-line-signature");
+    const ok = deps.verifySignature(req.rawBody ?? Buffer.from(""), signature);
     if (!ok) {
-      return res.status(401).send('invalid signature');
+      res.status(401).send("invalid signature");
+      return;
     }
 
     const events = (req.body?.events ?? []) as any[];
     for (const ev of events) {
-      if (ev.type === 'message' && ev.message?.type === 'text') {
+      if (ev.type === "message" && ev.message?.type === "text") {
         const text: string = ev.message.text;
         const answer = await deps.answerQuestion(text);
         await deps.replyMessage(ev.replyToken, answer);
       }
     }
-    res.status(200).send('ok');
+    res.status(200).send("ok");
+    return;
   });
 
   return app;
