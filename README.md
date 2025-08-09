@@ -76,8 +76,7 @@ npx tsx src/rag/ingestMarkdown.ts "C:\path\to\doc.md"
 - 分割: LangChain（チャンク 800字/オーバーラップ120字）
 - 埋め込み: Gemini `text-embedding-004`
 
-### HTML の前処理（任意）
-`functions/src/rag/html.ts` の `extractTextFromHtml(html)` で本文テキストを抽出→Markdownに整形→`ingestMarkdown.ts` で取り込み。
+<!-- HTML 前処理は現状サポート外 -->
 
 ## アーキテクチャ概要
 - `functions/src/index.ts`: Functions v2 エントリ。`lineWebhook` を公開
