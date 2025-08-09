@@ -11,7 +11,7 @@ import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/v2/https";
 
 import { createApp } from "./line/app";
-import { buildAnswerer } from "./rag/answerer";
+import { buildRagAnswerer } from "./rag/ragAnswerer";
 import { verifySignature as verifySignatureImpl } from "./line/signature";
 import { replyMessage as replyMessageImpl } from "./line/reply";
 import { LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, GENAI_API_KEY } from "./params";
@@ -33,7 +33,7 @@ setGlobalOptions({ maxInstances: 10 });
 
 // Build dependencies with env/secret params
 const app = createApp({
-  answerQuestion: buildAnswerer({ genaiApiKeyEnv: GENAI_API_KEY }),
+  answerQuestion: buildRagAnswerer({ getApiKey: () => process.env.GENAI_API_KEY }),
   verifySignature: (rawBody, signature) =>
     verifySignatureImpl({
       rawBody,
