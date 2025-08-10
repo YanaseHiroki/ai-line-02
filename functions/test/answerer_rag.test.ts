@@ -1,6 +1,35 @@
 import { describe, it, expect, vi } from "vitest";
 import { buildRagAnswerer } from "../src/rag/ragAnswerer";
 
+// プロンプトの構造を検証するヘルパー関数
+function expectPromptStructure(prompt: string) {
+  // 基本的な構造を確認
+  expect(prompt).toContain("あなたは有能なサポート担当です。ユーザーの質問に日本語で正確に回答してください。");
+  
+  // 回答内容セクション
+  expect(prompt).toContain("回答内容：");
+  expect(prompt).toContain("・もし質問がコンテキストに関連する内容であれば、コンテキストの内容に基づいて回答してください。");
+  expect(prompt).toContain("・コンテキストと関係ない質問に対しても回答してください。");
+  
+  // 注意点セクション
+  expect(prompt).toContain("注意点：");
+  expect(prompt).toContain("・資料に基づく回答かどうかについて言及せず回答内容だけを返す。");
+  expect(prompt).toContain("・資料に基づく回答の場合でも、資料のどこに書いてあるかに言及せず回答内容だけを返す。");
+  
+  // 不要な記述例セクション
+  expect(prompt).toContain("不要な記述例：");
+  expect(prompt).toContain("・資料にはーーの内容はありませんが");
+  expect(prompt).toContain("・資料にはーーに関する具体的な記述はありませんが");
+  expect(prompt).toContain("・ーーは、今回の資料からは直接読み取れません");
+  
+  // 文字数制限
+  expect(prompt).toContain("回答は最大500文字以内で簡潔にしてください。");
+  
+  // コンテキストと質問セクション
+  expect(prompt).toContain("コンテキスト:");
+  expect(prompt).toContain("質問:");
+}
+
 describe("buildRagAnswerer", () => {
   it("選択したコンテキストをプロンプトに含めてLLMに渡す", async () => {
     const chunks = [
@@ -33,9 +62,8 @@ describe("buildRagAnswerer", () => {
     const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
-      // 一般的な知識に関する質問の場合、コンテキストが少なくても回答する
-      expect(prompt).toContain("回答内容：もし質問がコンテキストに関連する内容であれば");
-      expect(prompt).toContain("コンテキストと関係ない質問に対しても回答してください");
+      // プロンプトの構造を検証
+      expectPromptStructure(prompt);
       return "東京は日本の首都で、人口約1400万人の大都市です。";
     });
 
@@ -81,8 +109,7 @@ describe("buildRagAnswerer", () => {
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
-      expect(prompt).toContain("回答内容：もし質問がコンテキストに関連する内容であれば");
-      expect(prompt).toContain("コンテキストと関係ない質問に対しても回答してください");
+      expectPromptStructure(prompt);
       return "こんにちは！何かお手伝いできることはありますか？";
     });
 
@@ -114,9 +141,7 @@ describe("buildRagAnswerer", () => {
     const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
-      // 資料にない内容の質問の場合、汎用的な回答をする
-      expect(prompt).toContain("回答内容：もし質問がコンテキストに関連する内容であれば");
-      expect(prompt).toContain("コンテキストと関係ない質問に対しても回答してください");
+      expectPromptStructure(prompt);
       return "プログラミングは論理的思考を養うのに役立ちます。初心者にはPythonがおすすめです。";
     });
 
@@ -223,9 +248,7 @@ describe("buildRagAnswerer", () => {
     const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
-      // 新しいプロンプトは問題のある回答を生成しない
-      expect(prompt).toContain("注意点：資料に基づく回答かどうかについて言及せず回答内容だけを返す");
-      expect(prompt).toContain("資料のどこに書いてあるかに言及せず回答内容だけを返す");
+      expectPromptStructure(prompt);
       return "プログラミングは論理的思考を養うのに役立ちます。初心者にはPythonがおすすめです。";
     });
 
@@ -251,8 +274,7 @@ describe("buildRagAnswerer", () => {
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
-      // プロンプトで文字数指定を確認
-      expect(prompt).toContain("回答は最大500文字以内で簡潔にしてください");
+      expectPromptStructure(prompt);
       return "これは短い回答です。";
     });
 
