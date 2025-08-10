@@ -9,7 +9,7 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => (text.includes("営業時間") ? [1, 0] : [0, 1]));
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       expect(prompt).toContain("営業時間は9:00-18:00です。");
       return "営業時間は9:00-18:00です。";
     });
@@ -32,10 +32,10 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       // 一般的な知識に関する質問の場合、コンテキストが少なくても回答する
-      expect(prompt).toContain("コンテキストが限られている場合や");
-      expect(prompt).toContain("一般的な知識に基づいて");
+      expect(prompt).toContain("もし質問がコンテキストに関連する内容であれば");
+      expect(prompt).toContain("コンテキストの内容を優先して回答してください");
       return "東京は日本の首都で、人口約1400万人の大都市です。";
     });
 
@@ -59,7 +59,7 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => (text.includes("営業時間") ? [1, 0] : [0, 1]));
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       expect(prompt).toContain("当社の営業時間は9:00-18:00です。");
       return "当社の営業時間は9:00-18:00です。";
     });
@@ -80,9 +80,9 @@ describe("buildRagAnswerer", () => {
     const chunks: { id: string; text: string; embedding: number[] }[] = [];
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
-      expect(prompt).toContain("コンテキストが限られている場合や");
-      expect(prompt).toContain("一般的な知識に基づいて");
+    const generate = vi.fn(async (prompt: string, options?: any) => {
+      expect(prompt).toContain("もし質問がコンテキストに関連する内容であれば");
+      expect(prompt).toContain("コンテキストの内容を優先して回答してください");
       return "こんにちは！何かお手伝いできることはありますか？";
     });
 
@@ -113,10 +113,10 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       // 資料にない内容の質問の場合、汎用的な回答をする
-      expect(prompt).toContain("コンテキストが限られている場合や");
-      expect(prompt).toContain("一般的な知識に基づいて");
+      expect(prompt).toContain("もし質問がコンテキストに関連する内容であれば");
+      expect(prompt).toContain("コンテキストの内容を優先して回答してください");
       return "プログラミングは論理的思考を養うのに役立ちます。初心者にはPythonがおすすめです。";
     });
 
@@ -142,9 +142,12 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
-      // プロンプトで500文字以内の回答を生成するよう指示されていることを確認
-      expect(prompt).toContain("回答は最大500文字以内で簡潔にしてください");
+    const generate = vi.fn(async (prompt: string, options?: any) => {
+      // プロンプトから文字数指定を削除したことを確認
+      expect(prompt).not.toContain("回答文は500文字以内で簡潔にしてください");
+      // オプションで文字数が指定されていることを確認
+      expect(options).toBeDefined();
+      expect(options.maxOutputTokens).toBe(500);
       // 確実に500文字を超える回答を返す
       return "これは長い回答です。".repeat(51);
     });
@@ -170,7 +173,7 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       // 短い回答を返す
       return "これは短い回答です。";
     });
@@ -196,7 +199,7 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       // ちょうど500文字の回答を返す
       return "a".repeat(500);
     });
@@ -222,9 +225,10 @@ describe("buildRagAnswerer", () => {
     ];
     const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
     const loadAll = vi.fn(async () => chunks);
-    const generate = vi.fn(async (prompt: string) => {
+    const generate = vi.fn(async (prompt: string, options?: any) => {
       // 新しいプロンプトは問題のある回答を生成しない
-      expect(prompt).toContain("「資料にはーーの内容はありません」のような前置きは避け");
+      expect(prompt).toContain("もし質問がコンテキストに関連する内容であれば");
+      expect(prompt).toContain("コンテキストの内容を優先して回答してください");
       return "プログラミングは論理的思考を養うのに役立ちます。初心者にはPythonがおすすめです。";
     });
 
@@ -241,6 +245,35 @@ describe("buildRagAnswerer", () => {
     expect(res).not.toContain("資料には");
     expect(res).not.toContain("内容はありません");
     expect(res).toContain("プログラミング");
+  });
+
+  it("generateContentのオプションで文字数を指定する", async () => {
+    const chunks = [
+      { id: "1", text: "営業時間は9:00-18:00です。", embedding: [1, 0] },
+    ];
+    const embed = vi.fn(async (text: string) => [0, 0]);
+    const loadAll = vi.fn(async () => chunks);
+    let capturedOptions: any = null;
+    const generate = vi.fn(async (prompt: string, options?: any) => {
+      capturedOptions = options;
+      // プロンプトから文字数指定を削除したことを確認
+      expect(prompt).not.toContain("回答文は500文字以内で簡潔にしてください");
+      return "これは短い回答です。";
+    });
+
+    const answerer = buildRagAnswerer({
+      getApiKey: () => "DUMMY",
+      embedFn: embed,
+      loadAllChunksFn: loadAll,
+      generateFn: generate,
+      topK: 1,
+    });
+
+    const res = await answerer("テスト質問");
+    // generateContentにオプションが渡されることを確認
+    expect(capturedOptions).toBeDefined();
+    expect(capturedOptions.maxOutputTokens).toBe(500);
+    expect(res).toBe("これは短い回答です。");
   });
 });
 

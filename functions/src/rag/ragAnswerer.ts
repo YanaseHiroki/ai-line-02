@@ -40,25 +40,22 @@ export function buildRagAnswerer(opts: {
     });
 
     const context = relevant.map((c, i) => `【${i + 1}】${c.text}`).join("\n\n");
-    const prompt = `あなたは有能なサポート担当です。以下のコンテキストに基づき、ユーザーの質問に日本語で簡潔かつ正確に回答してください。
-
-コンテキストが限られている場合や、質問内容がコンテキストに含まれていない場合は、一般的な知識に基づいて自然に回答してください。「資料にはーーの内容はありません」のような前置きは避け、直接的に質問に答えてください。
-
-回答は最大${MAX_ANSWER_LENGTH}文字以内で簡潔にしてください。
+    const prompt = `あなたは有能なサポート担当です。ユーザーの質問に日本語で正確に回答してください。
+もし質問がコンテキストに関連する内容であれば、コンテキストの内容を優先して回答してください。
 
 コンテキスト:
 ${context}
 
 質問:${query}`;
 
-    const generate = opts.generateFn ?? (async (p: string) => {
+    const generate = opts.generateFn ?? (async (p: string, options?: any) => {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const res = await model.generateContent(p);
+      const res = await model.generateContent(p, options);
       return res.response.text();
     });
 
-    const answer = await generate(prompt);
+    const answer = await generate(prompt, { maxOutputTokens: MAX_ANSWER_LENGTH });
     if (!answer) return "回答を生成できませんでした。";
 
     // 500文字より長い場合、499文字に切り詰めて「…」を追加
