@@ -48,7 +48,7 @@ firebase deploy --only functions
 - Webhook URL 例）`https://us-central1-<PROJECT_ID>.cloudfunctions.net/lineWebhook/line/webhook`
 - Use webhook: ON
 - Response mode: Bot
-- 自動応答/あいさつメッセージ: OFF（ダブル返信防止）
+- 自動応答/あいさつメッセージ: OFF（重複返信防止）
 
 ## ローカルテスト
 - ユニットテスト
