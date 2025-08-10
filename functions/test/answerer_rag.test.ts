@@ -34,7 +34,7 @@ describe("buildRagAnswerer", () => {
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
       // 一般的な知識に関する質問の場合、コンテキストが少なくても回答する
-      expect(prompt).toContain("コンテキストが限られている場合でも");
+      expect(prompt).toContain("コンテキストが限られている場合や");
       expect(prompt).toContain("一般的な知識に基づいて");
       return "東京は日本の首都で、人口約1400万人の大都市です。";
     });
@@ -81,7 +81,7 @@ describe("buildRagAnswerer", () => {
     const embed = vi.fn(async (text: string) => [0, 0]);
     const loadAll = vi.fn(async () => chunks);
     const generate = vi.fn(async (prompt: string) => {
-      expect(prompt).toContain("コンテキストが限られている場合でも");
+      expect(prompt).toContain("コンテキストが限られている場合や");
       expect(prompt).toContain("一般的な知識に基づいて");
       return "こんにちは！何かお手伝いできることはありますか？";
     });
@@ -105,6 +105,142 @@ describe("buildRagAnswerer", () => {
 
     const res = await answerer("テスト質問");
     expect(res).toBe("現在サービスが混雑しています。しばらくしてからお試しください。");
+  });
+
+  it("資料にない内容の質問に対しては汎用的なAIチャットとして回答する", async () => {
+    const chunks = [
+      { id: "1", text: "営業時間は9:00-18:00です。", embedding: [1, 0] },
+    ];
+    const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
+    const loadAll = vi.fn(async () => chunks);
+    const generate = vi.fn(async (prompt: string) => {
+      // 資料にない内容の質問の場合、汎用的な回答をする
+      expect(prompt).toContain("コンテキストが限られている場合や");
+      expect(prompt).toContain("一般的な知識に基づいて");
+      return "プログラミングは論理的思考を養うのに役立ちます。初心者にはPythonがおすすめです。";
+    });
+
+    const answerer = buildRagAnswerer({
+      getApiKey: () => "DUMMY",
+      embedFn: embed,
+      loadAllChunksFn: loadAll,
+      generateFn: generate,
+      topK: 1,
+    });
+
+    const res = await answerer("プログラミングについて教えて");
+    expect(res).toContain("プログラミング");
+    expect(res).toContain("Python");
+    // 「資料にはーーの内容はありません」という文が含まれていないことを確認
+    expect(res).not.toContain("資料には");
+    expect(res).not.toContain("内容はありません");
+  });
+
+  it("回答の長さは最大500文字に制限される", async () => {
+    const chunks = [
+      { id: "1", text: "営業時間は9:00-18:00です。", embedding: [1, 0] },
+    ];
+    const embed = vi.fn(async (text: string) => [0, 0]);
+    const loadAll = vi.fn(async () => chunks);
+    const generate = vi.fn(async (prompt: string) => {
+      // プロンプトで500文字以内の回答を生成するよう指示されていることを確認
+      expect(prompt).toContain("回答は最大500文字以内で簡潔にしてください");
+      // 確実に500文字を超える回答を返す
+      return "これは長い回答です。".repeat(51);
+    });
+
+    const answerer = buildRagAnswerer({
+      getApiKey: () => "DUMMY",
+      embedFn: embed,
+      loadAllChunksFn: loadAll,
+      generateFn: generate,
+      topK: 1,
+    });
+
+    const res = await answerer("テスト質問");
+    // 500文字以上の場合、499文字に切り詰めて「…」を追加
+    expect(res.length).toBe(500); // 499文字 + 「…」1文字 = 500文字
+    expect(res).toContain("これは長い回答です");
+    expect(res.endsWith("…")).toBe(true);
+  });
+
+  it("500文字未満の回答はそのまま返される", async () => {
+    const chunks = [
+      { id: "1", text: "営業時間は9:00-18:00です。", embedding: [1, 0] },
+    ];
+    const embed = vi.fn(async (text: string) => [0, 0]);
+    const loadAll = vi.fn(async () => chunks);
+    const generate = vi.fn(async (prompt: string) => {
+      // 短い回答を返す
+      return "これは短い回答です。";
+    });
+
+    const answerer = buildRagAnswerer({
+      getApiKey: () => "DUMMY",
+      embedFn: embed,
+      loadAllChunksFn: loadAll,
+      generateFn: generate,
+      topK: 1,
+    });
+
+    const res = await answerer("テスト質問");
+    // 500文字未満の場合はそのまま返される
+    expect(res).toBe("これは短い回答です。");
+    expect(res.length).toBeLessThan(500);
+    expect(res.endsWith("…")).toBe(false);
+  });
+
+  it("ちょうど500文字の回答はそのまま返される", async () => {
+    const chunks = [
+      { id: "1", text: "営業時間は9:00-18:00です。", embedding: [1, 0] },
+    ];
+    const embed = vi.fn(async (text: string) => [0, 0]);
+    const loadAll = vi.fn(async () => chunks);
+    const generate = vi.fn(async (prompt: string) => {
+      // ちょうど500文字の回答を返す
+      return "a".repeat(500);
+    });
+
+    const answerer = buildRagAnswerer({
+      getApiKey: () => "DUMMY",
+      embedFn: embed,
+      loadAllChunksFn: loadAll,
+      generateFn: generate,
+      topK: 1,
+    });
+
+    const res = await answerer("テスト質問");
+    // ちょうど500文字の場合はそのまま返される
+    expect(res.length).toBe(500);
+    expect(res).toBe("a".repeat(500));
+    expect(res.endsWith("…")).toBe(false);
+  });
+
+  it("現在のプロンプトが問題のある回答を生成することを確認", async () => {
+    const chunks = [
+      { id: "1", text: "営業時間は9:00-18:00です。", embedding: [1, 0] },
+    ];
+    const embed = vi.fn(async (text: string) => [0, 0]); // 関連性の低い埋め込み
+    const loadAll = vi.fn(async () => chunks);
+    const generate = vi.fn(async (prompt: string) => {
+      // 新しいプロンプトは問題のある回答を生成しない
+      expect(prompt).toContain("「資料にはーーの内容はありません」のような前置きは避け");
+      return "プログラミングは論理的思考を養うのに役立ちます。初心者にはPythonがおすすめです。";
+    });
+
+    const answerer = buildRagAnswerer({
+      getApiKey: () => "DUMMY",
+      embedFn: embed,
+      loadAllChunksFn: loadAll,
+      generateFn: generate,
+      topK: 1,
+    });
+
+    const res = await answerer("プログラミングについて教えて");
+    // 新しい実装では「資料にはーーの内容はありません」が含まれない
+    expect(res).not.toContain("資料には");
+    expect(res).not.toContain("内容はありません");
+    expect(res).toContain("プログラミング");
   });
 });
 
