@@ -60,12 +60,12 @@ ${context}
 
     const answer = await generate(prompt);
     if (!answer) return "回答を生成できませんでした。";
-    
-    // 500文字以上の場合、499文字に切り詰めて「…」を追加
+
+    // 500文字より長い場合、499文字に切り詰めて「…」を追加
     if (answer.length > MAX_ANSWER_LENGTH) {
       return answer.slice(0, MAX_ANSWER_LENGTH - 1) + "…";
     }
-    
+
     return answer;
   };
 }

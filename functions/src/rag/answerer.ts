@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export function buildAnswerer({ genaiApiKeyEnv }: { genaiApiKeyEnv: { name: string } }) {
+export function buildAnswerer() {
   return async (query: string): Promise<string> => {
     const apiKey = process.env.GENAI_API_KEY;
     if (!apiKey) {
