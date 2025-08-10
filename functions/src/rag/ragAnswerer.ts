@@ -38,7 +38,14 @@ export function buildRagAnswerer(opts: {
     });
 
     const context = relevant.map((c, i) => `【${i + 1}】${c.text}`).join("\n\n");
-    const prompt = `あなたは有能なサポート担当です。以下のコンテキストに基づき、ユーザーの質問に日本語で簡潔かつ正確に回答してください。\n\nコンテキスト:\n${context}\n\n質問:${query}`;
+    const prompt = `あなたは有能なサポート担当です。以下のコンテキストに基づき、ユーザーの質問に日本語で簡潔かつ正確に回答してください。
+
+コンテキストが限られている場合でも、一般的な知識に基づいて回答してください。コンテキストに含まれる情報がある場合はそれを優先し、ない場合は一般的な知識で補完してください。
+
+コンテキスト:
+${context}
+
+質問:${query}`;
 
     const generate = opts.generateFn ?? (async (p: string) => {
       const genAI = new GoogleGenerativeAI(apiKey);
