@@ -290,6 +290,3 @@ describe("buildRagAnswerer", () => {
     expect(res).toBe("これは短い回答です。");
   });
 });
-
-
-
