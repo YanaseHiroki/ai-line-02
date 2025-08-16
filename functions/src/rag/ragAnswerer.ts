@@ -7,12 +7,18 @@ const MAX_ANSWER_LENGTH = 500;
 export function buildRagAnswerer(opts: {
   getApiKey: () => string | undefined;
   topK?: number;
+  useHybridSearch?: boolean; // ハイブリッド検索を使用するかどうか
+  hybridConfig?: {
+    vectorWeight?: number;
+    keywordWeight?: number;
+    minScore?: number;
+  };
   // test overrides
   embedFn?: (text: string) => Promise<number[]>;
   loadAllChunksFn?: () => Promise<{ id: string; text: string; embedding: number[] }[]>;
   generateFn?: (prompt: string) => Promise<string>;
 }) {
-  const topK = opts.topK ?? 4; // 6から4に戻してパフォーマンスを改善
+  const topK = opts.topK ?? 4;
   return async (query: string): Promise<string> => {
     const startTime = Date.now();
     const apiKey = opts.getApiKey();
@@ -51,6 +57,8 @@ export function buildRagAnswerer(opts: {
       },
       loadAllChunks: async () => chunks, // 既に読み込み済みのチャンクを使用
       getEmbeddingVector: (c) => c.embedding,
+      useHybridSearch: opts.useHybridSearch || false, // ハイブリッド検索のオプション
+      hybridConfig: opts.hybridConfig || {}, // ハイブリッド検索の設定
     });
     const retrievalTime = Date.now() - retrievalStart;
     console.log(`Retrieval time: ${retrievalTime}ms (retrieved ${relevant.length} chunks)`);
@@ -99,21 +107,12 @@ ${context}
 
     // 500文字より長い場合、499文字に切り詰めて「…」を追加
     if (answer.length > MAX_ANSWER_LENGTH) {
-      return answer.slice(0, MAX_ANSWER_LENGTH - 1) + "…";
+      return answer.substring(0, MAX_ANSWER_LENGTH - 1) + "…";
     }
 
     const totalTime = Date.now() - startTime;
     console.log(`Total RAG time: ${totalTime}ms`);
-
-    // 最も遅いステップを特定
-    const times = [
-      { name: "Embedding", time: embedTime },
-      { name: "Load chunks", time: loadTime },
-      { name: "Retrieval", time: retrievalTime },
-      { name: "LLM generation", time: generateTime },
-    ];
-    const slowest = times.reduce((a, b) => a.time > b.time ? a : b);
-    console.log(`Slowest step: ${slowest.name} (${slowest.time}ms)`);
+    console.log(`Slowest step: ${Math.max(embedTime, loadTime, retrievalTime, generateTime) === embedTime ? "Embedding" : Math.max(embedTime, loadTime, retrievalTime, generateTime) === loadTime ? "Load chunks" : Math.max(embedTime, loadTime, retrievalTime, generateTime) === retrievalTime ? "Retrieval" : "LLM generation"} (${Math.max(embedTime, loadTime, retrievalTime, generateTime)}ms)`);
 
     return answer;
   };

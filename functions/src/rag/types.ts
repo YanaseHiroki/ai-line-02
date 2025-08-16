@@ -6,3 +6,9 @@ export type DocChunk = {
   page?: number;
 };
 
+export type Chunk = {
+  id: string;
+  text: string;
+  embedding: number[];
+};
+
